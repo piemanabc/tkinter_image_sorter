@@ -25,8 +25,18 @@ height = 97
 position = ''
 del_count = 0
 loaded = FALSE
-name = StringVar()
-name.set("")
+tags_e = ''
+name = ''
+name_s = ''
+namenoises = ''
+
+
+def name_update(label):
+    def namecheck():
+        global name, tags_e
+        label.config(text=str("{}{}".format(name_s, tags_e)))
+        label.after(10, namecheck)
+    namecheck()
 
 
 def print_all(array):
@@ -41,11 +51,14 @@ def add_tag():
 
 
 def apply_tag(n):
+    global namenoises
     bname = (pos_button_identities[n])
     image_tags.append(tags[n])
     bname.configure(text="added", state=DISABLED)
     bname = neg_button_identities[n]
     bname.configure(state=ACTIVE)
+    gen_name()
+    name_update(namenoises)
 
 
 def remove_tag(n):
@@ -200,16 +213,28 @@ def clear_data():
     print("removed saved tags")
 
 
-def save_name():
-    name = ''
+def update_name():
+    global namenoises
+
+    name_update(namenoises)
+
+
+def gen_name():
+    global name, namenoises, name_s, tags_e
+    name_s = ''
     for item in range(0, 5):
         num = randint(0, 9)
-        name = str(name) + str(num)
+        name_s = str(name_s) + str(num)
 
     for index, item in enumerate(tags):
         if item in image_tags:
             location = tags.index(item)
-            name = name + str(alphabet[location])
+            tags_e = tags_e + str(alphabet[location])
+
+    name_update(namenoises)
+
+
+def save_name(name):
 
     top = Toplevel()
     topframe = Frame(top)
@@ -231,8 +256,13 @@ def save_name():
 def open_images():
     list_tags()
     global img_identity, arrow_identity, position, loaded, namenoises
+    name = ''
+    namenoises = Label(master, text=name)
 
-    namenoises.entry(master, text=name)
+    namenoises.grid(in_=toolsframe, sticky=NSEW, row=3, column=3)
+    gen_name()
+
+    name_update(namenoises)
 
     if len(arrow_identity) > 0:
         pos = position
@@ -402,7 +432,8 @@ button = Button(master, text='open full size', command=open_full)
 button.grid(in_=toolsframe, sticky=EW, row=0, column=3)
 
 Label(master, text="Current name:").grid(in_=toolsframe, sticky=NSEW, row=2, column=3)
-namenoises = Label(master, text=name).grid(in_=toolsframe, sticky=NSEW, row=3, column=3)
+
+
 
 button = Button(master, text='Apply!', command=save_name)
 button.grid(in_=toolsframe, sticky=EW, row=6, column=3)
