@@ -22,15 +22,17 @@ master = Tk()
 image_tags = []
 width = 350
 height = 97
-position = ''
+position = 0
 del_count = 0
 loaded = FALSE
 tags_e = ''
 name = ''
 name_s = ''
 namenoises = ''
+pics = []
 
 
+# This function updates teh label with a preview of the name
 def name_update(label):
     def namecheck():
         global name, tags_e
@@ -38,18 +40,18 @@ def name_update(label):
         label.after(10, namecheck)
     namecheck()
 
-
+# debug option
 def print_all(array):
     print(array)
 
-
+# adding a tag to a the list of tags
 def add_tag():
     print("added tag: %s" % (e1.get()))
     temp = e1.get()
     tags.append(temp)
     e1.delete(0, END)
 
-
+# commiting a tag to the image
 def apply_tag(n):
     global namenoises
     bname = (pos_button_identities[n])
@@ -60,7 +62,7 @@ def apply_tag(n):
     gen_name()
     name_update(namenoises)
 
-
+# removes tag from image
 def remove_tag(n):
     global tags, image_tags
     str = (tags[n])
@@ -73,7 +75,7 @@ def remove_tag(n):
     bname.configure(state=ACTIVE)
     print(button_identities)
 
-
+# remove tag from list
 def delete_tag(n):
     global tags, image_tags
     print("removed {}".format(tags[n]))
@@ -84,7 +86,7 @@ def delete_tag(n):
 
     list_tags()
 
-
+# list all tags for user to see, this may need to be reworked
 def list_tags():
     count = 0
     tagsframe = Frame(master=None)
@@ -104,9 +106,6 @@ def list_tags():
         for index, item in range(0, len(label_identities)):
             bname = (label_identities[index])
             bname.destroy()
-
-
-
 
     button_identities = []
     neg_button_identities = []
@@ -150,7 +149,7 @@ def list_tags():
         count += 1
         row += 1
 
-
+# saves the list ofb tags to a file
 def save_config():
     global tags
     global tagkeys
@@ -185,7 +184,7 @@ def save_config():
 
     print("tags saved")
 
-
+# Reads tags and settings from a file from a file
 def read_config():
     global tags
     global tagkeys
@@ -207,18 +206,18 @@ def read_config():
     else:
         print("no config found, Please add some tags then save them")
 
-
+# deletes saved settings
 def clear_data():
     os.remove('data/config.ini')
     print("removed saved tags")
 
-
+# this function is pointless however i want to keep it because
+# i cant be bothered fixing what will break if i remove it
 def update_name():
     global namenoises
-
     name_update(namenoises)
 
-
+# generates a name for the image
 def gen_name():
     global name, namenoises, name_s, tags_e
     name_s = ''
@@ -233,7 +232,7 @@ def gen_name():
 
     name_update(namenoises)
 
-
+# saves the name of the image to the image. Currently not working
 def save_name(name):
 
     top = Toplevel()
@@ -252,14 +251,17 @@ def save_name(name):
     button = Button(top, text="Dismiss", command=top.destroy)
     button.grid(column=3, columnspan=3)
 
-
+# load in all images, this function is loaded every fucking time the position is changed
+# that is quite possibly the LEAST efficient way of doing this. what the fuck is wrong with you
 def open_images():
     list_tags()
-    global img_identity, arrow_identity, position, loaded, namenoises
+    global img_identity, arrow_identity, position, loaded, namenoises, pics
     name = ''
     namenoises = Label(master, text=name)
 
     namenoises.grid(in_=toolsframe, sticky=NSEW, row=3, column=3)
+    # Create a function to check if the name has been created for that photo yet
+
     gen_name()
 
     name_update(namenoises)
@@ -271,6 +273,18 @@ def open_images():
         position = 0
         pos = position
 
+    dir = "pics_here"
+    pics = os.listdir(dir)
+    pics.sort()
+    print(pics)
+    master.geometry("%sx%s" % (1200, 900))
+    change_image(0)
+
+
+# this function was made in the hopes that i could make the program slightly more efficient,
+# and it fucking does, suck my ass.
+def change_image(newpos):
+    global img_identity, arrow_identity, position, loaded, namenoises, pics
     if len(img_identity) > 0:
             bname = (img_identity[0])
             bname.destroy()
@@ -280,11 +294,7 @@ def open_images():
                 bname.destroy()
                 arrow_identity = []
 
-    dir = "pics_here"
-    pics = os.listdir(dir)
-    pics.sort()
-    master.geometry("%sx%s" % (1200, 900))
-    image = Image.open("Pics_here/%s" % (pics[pos]))
+    image = Image.open("Pics_here/%s" % (pics[newpos]))
 
     w = image.width
     h = image.height
@@ -312,19 +322,21 @@ def open_images():
     label.grid(sticky=NE, row=1, column=6)
     img_identity.append(label)
     arrows = ['ico/lefta.png', 'ico/righta.png']
+    image.close()
 
     for i in range(0, 2):
         ico = PhotoImage(file=arrows[i])
         button = Button(master, text=tags[i], image=ico, command=partial(change_pos, i))
         arrow_identity.append(button)
         neg_button_identities.append(button)
-        button.grid(row=1, column=5+(i*2), sticky=NSEW)
+        button.grid(row=1, column=5 + (i * 2), sticky=NSEW)
         label = Label(image=ico)
         label.image = ico
 
 
+# Generates the new position, This is done though making the list cyclic rather than linear
 def change_pos(func):
-    global position
+    global position, img_identity, arrow_identity
     dir = os.listdir("Pics_here")
     if func == 0:
         position = position - 1
@@ -334,9 +346,16 @@ def change_pos(func):
         position = position + 1
         if position > len(dir) - 1:
             position = 0
-    open_images()
+    print("changed pos variable to {}".format(position))
+    change_image(position)
 
 
+
+def fetch_data():
+    print("fuck")
+
+
+# open image full size
 def open_full():
     global position, loaded
     pos = position
