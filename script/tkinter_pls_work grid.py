@@ -31,6 +31,7 @@ name_s = ''
 namenoises = ''
 pics = []
 pic_info = []
+
 # this is part of the thing i just broke
 wantedt = []
 
@@ -249,7 +250,7 @@ def update_name():
     name_update(namenoises)
 
 
-# generates a name for the image
+# generates a suffix for the image by creating a 5 digit random number
 def gen_name():
     global name, namenoises, name_s, tags_e
     name_s = ''
@@ -263,7 +264,6 @@ def gen_name():
 # this array expects a list to be given then iterates though it
 # this may be the best option for saving the names of teh files with the preview removed
 # this is the broken thing, It goes into a infinite loop
-
 def apply_ntags(desiredt):
     tagsext = ''
     applypos = desiredt
@@ -392,7 +392,9 @@ def change_pos(func):
     print("changed pos variable to {}".format(position))
     change_image(position)
 
-
+###############################
+# !!!! this is important !!!!!#
+###############################
 def fetch_data():
     print("fuck")
 
