@@ -30,19 +30,25 @@ name = ''
 name_s = ''
 namenoises = ''
 pics = []
+pic_info = []
+# this is part of the thing i just broke
+wantedt = []
 
 
 # This function updates teh label with a preview of the name
 def name_update(label):
     def namecheck():
-        global name, tags_e
-        label.config(text=str("{}{}".format(name_s, tags_e)))
+        global name, tags_e, pic_info, position
+        temp = pic_info[position]
+        label.config(text=str(temp[1]))
         label.after(10, namecheck)
     namecheck()
+
 
 # debug option
 def print_all(array):
     print(array)
+
 
 # adding a tag to a the list of tags
 def add_tag():
@@ -51,9 +57,25 @@ def add_tag():
     tags.append(temp)
     e1.delete(0, END)
 
-# commiting a tag to the image
+
+# commiting a tag to the image, this currently will puit all aplpied tags into one positing
+# in the array which makes it hard to use. This needs to be changed to the encoded letter for
+# each tag but im going to make lunch
+
 def apply_tag(n):
-    global namenoises
+    global namenoises, pic_info, position, wantedt
+    print(n)
+    temp = pic_info[position]
+    if len(temp) < 3:
+        temp.append(tags[n])
+        print(temp)
+        print("no tags so i added some")
+    else:
+        print(temp)
+        itags = temp[2]
+        itags = itags + str(tags[n])
+        temp[2] = itags
+        print(temp)
     bname = (pos_button_identities[n])
     image_tags.append(tags[n])
     bname.configure(text="added", state=DISABLED)
@@ -61,6 +83,9 @@ def apply_tag(n):
     bname.configure(state=ACTIVE)
     gen_name()
     name_update(namenoises)
+    # also part of the broken thing
+    wantedt.append(n)
+
 
 # removes tag from image
 def remove_tag(n):
@@ -75,6 +100,7 @@ def remove_tag(n):
     bname.configure(state=ACTIVE)
     print(button_identities)
 
+
 # remove tag from list
 def delete_tag(n):
     global tags, image_tags
@@ -85,6 +111,7 @@ def delete_tag(n):
     image_tags.pop(image_tags.index(tag))
 
     list_tags()
+
 
 # list all tags for user to see, this may need to be reworked
 def list_tags():
@@ -149,6 +176,7 @@ def list_tags():
         count += 1
         row += 1
 
+
 # saves the list ofb tags to a file
 def save_config():
     global tags
@@ -184,6 +212,7 @@ def save_config():
 
     print("tags saved")
 
+
 # Reads tags and settings from a file from a file
 def read_config():
     global tags
@@ -206,16 +235,19 @@ def read_config():
     else:
         print("no config found, Please add some tags then save them")
 
+
 # deletes saved settings
 def clear_data():
     os.remove('data/config.ini')
     print("removed saved tags")
+
 
 # this function is pointless however i want to keep it because
 # i cant be bothered fixing what will break if i remove it
 def update_name():
     global namenoises
     name_update(namenoises)
+
 
 # generates a name for the image
 def gen_name():
@@ -224,13 +256,25 @@ def gen_name():
     for item in range(0, 5):
         num = randint(0, 9)
         name_s = str(name_s) + str(num)
+    return name_s
 
-    for index, item in enumerate(tags):
-        if item in image_tags:
-            location = tags.index(item)
-            tags_e = tags_e + str(alphabet[location])
 
-    name_update(namenoises)
+# this applys the tags to the name, encoding them as strs
+# this array expects a list to be given then iterates though it
+# this may be the best option for saving the names of teh files with the preview removed
+# this is the broken thing, It goes into a infinite loop
+
+def apply_ntags(desiredt):
+    tagsext = ''
+    applypos = desiredt
+    applypos.sort()
+
+    for i in applypos:
+        print(i)
+        tagsext = tagsext + alphabet[int(i)]
+
+    return tagsext
+
 
 # saves the name of the image to the image. Currently not working
 def save_name(name):
@@ -251,32 +295,26 @@ def save_name(name):
     button = Button(top, text="Dismiss", command=top.destroy)
     button.grid(column=3, columnspan=3)
 
+
 # load in all images, this function is loaded every fucking time the position is changed
 # that is quite possibly the LEAST efficient way of doing this. what the fuck is wrong with you
 def open_images():
     list_tags()
-    global img_identity, arrow_identity, position, loaded, namenoises, pics
+    global img_identity, arrow_identity, position, loaded, namenoises, pics, pic_info
     name = ''
     namenoises = Label(master, text=name)
 
     namenoises.grid(in_=toolsframe, sticky=NSEW, row=3, column=3)
     # Create a function to check if the name has been created for that photo yet
 
-    gen_name()
-
-    name_update(namenoises)
-
-    if len(arrow_identity) > 0:
-        pos = position
-
-    elif len(arrow_identity) <= 0:
-        position = 0
-        pos = position
-
     dir = "pics_here"
     pics = os.listdir(dir)
     pics.sort()
-    print(pics)
+    for i in pics:
+        temp = []
+        temp.append(i)
+        temp.append(gen_name())
+        pic_info.append(temp)
     master.geometry("%sx%s" % (1200, 900))
     change_image(0)
 
@@ -285,6 +323,7 @@ def open_images():
 # and it fucking does, suck my ass.
 def change_image(newpos):
     global img_identity, arrow_identity, position, loaded, namenoises, pics
+
     if len(img_identity) > 0:
             bname = (img_identity[0])
             bname.destroy()
@@ -295,7 +334,8 @@ def change_image(newpos):
                 arrow_identity = []
 
     image = Image.open("Pics_here/%s" % (pics[newpos]))
-
+    update_name()
+# resizing function starts
     w = image.width
     h = image.height
     multiplier = 0
@@ -313,6 +353,8 @@ def change_image(newpos):
 
     new_w = int(multiplier * width_r)
     new_h = int(multiplier * height_r)
+
+# resizing function ends
 
     print("resizing: {}x{} to {}x{} scaled by {} ({})".format(w, h, new_w, new_h, int(multiplier), bigger))
     image = image.resize((new_w, new_h), Image.ANTIALIAS)
@@ -346,9 +388,9 @@ def change_pos(func):
         position = position + 1
         if position > len(dir) - 1:
             position = 0
+    print()
     print("changed pos variable to {}".format(position))
     change_image(position)
-
 
 
 def fetch_data():
@@ -444,7 +486,6 @@ e1.grid(in_=toolsframe, row=0, sticky=NSEW, columnspan=1, column=1)
 button = Button(master, text='add', command=add_tag)
 button.grid(in_=toolsframe, sticky=EW, row=0, column=3)
 
-
 toolsframe.grid()
 
 button = Button(master, text='open full size', command=open_full)
@@ -452,10 +493,7 @@ button.grid(in_=toolsframe, sticky=EW, row=0, column=3)
 
 Label(master, text="Current name:").grid(in_=toolsframe, sticky=NSEW, row=2, column=3)
 
-
-
 button = Button(master, text='Apply!', command=save_name)
 button.grid(in_=toolsframe, sticky=EW, row=6, column=3)
-
 
 master.mainloop()
