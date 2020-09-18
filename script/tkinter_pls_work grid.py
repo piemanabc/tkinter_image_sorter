@@ -31,6 +31,7 @@ name_s = ''
 namenoises = ''
 pics = []
 pic_info = []
+temp = []
 
 tagsext = ''
 
@@ -118,10 +119,11 @@ def delete_tag(n):
 
 # list all tags for user to see, this may need to be reworked
 def list_tags():
+    global button_identities, pos_button_identities, neg_button_identities, rem_button_identities, image_tags, temp
     count = 0
     tagsframe = Frame(master=None)
     tagsframe.grid(row=1, column=0, sticky=NSEW, columnspan=4)
-    global button_identities, pos_button_identities, neg_button_identities, rem_button_identities, image_tags
+
     if len(button_identities) > 0:
 
         for index, item in range(0, len(pos_button_identities)):
@@ -172,13 +174,16 @@ def list_tags():
         label = Label(image=ico)
         label.image = ico
 
-        if any(tags[i] in s for s in image_tags):
-            bname = pos_button_identities[i]
-            bname.configure(state=DISABLED)
-            bname = neg_button_identities[i]
-            bname.configure(state=ACTIVE)
         count += 1
         row += 1
+
+    if len(temp) > 1:
+        for e in range(0, len(tags)):
+            if temp.count(tags[e]) > 0:
+                bname = pos_button_identities[e]
+                bname.configure(state=DISABLED)
+                bname = neg_button_identities[e]
+                bname.configure(state=ACTIVE)
 
 
 # saves the list ofb tags to a file
@@ -404,6 +409,7 @@ def change_pos(func):
     print()
     print("changed pos variable to {}".format(position))
     change_image(position)
+    list_tags()
 
 
 # This is supposed to save and fetch the new info for the next image
@@ -417,6 +423,7 @@ def fetch_data(newpos):
 
     pic_info[old_pos] = temp
     temp = pic_info[newpos]
+
 
 # open image full size
 def open_full():
