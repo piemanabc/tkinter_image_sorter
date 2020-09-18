@@ -1,7 +1,6 @@
 from tkinter import *
 from functools import partial
 import os
-import re
 from PIL import Image, ImageTk
 from string import ascii_uppercase
 from random import randint
