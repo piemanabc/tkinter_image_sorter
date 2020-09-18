@@ -1,6 +1,7 @@
 from tkinter import *
 from functools import partial
 import os
+import re
 from PIL import Image, ImageTk
 from string import ascii_uppercase
 from random import randint
@@ -20,8 +21,8 @@ label_identities = []
 tagkeys = []
 master = Tk()
 image_tags = []
-width = 350
-height = 97
+width = 1200
+height = 900
 position = 0
 del_count = 0
 loaded = FALSE
@@ -32,10 +33,26 @@ namenoises = ''
 pics = []
 pic_info = []
 temp = []
+tagsext_s = ''
 
 tagsext = ''
 
-# this is part of the thing i just broke
+def error_popup(title, errortxt):
+    top = Toplevel()
+    topframe = Frame(top)
+
+    topframe.grid(row=0, column=0, sticky="NESW")
+    topframe.grid_rowconfigure(0, weight=1)
+    topframe.grid_columnconfigure(0, weight=1)
+
+    top.geometry("300x300")
+    top.title(title)
+
+    msg = Message(top, text=errortxt)
+    msg.grid(column=3, columnspan=3)
+
+    button = Button(top, text="Okay", command=top.destroy)
+    button.grid(column=3, columnspan=3)
 
 
 # This function updates teh label with a preview of the name
@@ -55,9 +72,13 @@ def print_all(array):
 
 # adding a tag to a the list of tags
 def add_tag():
-    print("added tag: %s" % (e1.get()))
-    temp = e1.get()
-    tags.append(temp)
+    tag = e1.get().lower()
+    if tags.count(tag) > 0:
+        error_popup("Tag conflict!", "Already added tag!")
+    else:
+        tags.append(tag)
+        print("added tag: %s" % (e1.get()))
+        list_tags()
     e1.delete(0, END)
 
 
@@ -93,9 +114,8 @@ def remove_tag(n):
     global tags, image_tags, position, temp
     temp = pic_info[position]
     rem = tags[n]
-    print(temp)
     temp.pop(temp.index(rem))
-    print(temp)
+    apply_ntags(-1)
     bname = neg_button_identities[n]
     bname.configure(state=DISABLED)
     bname = pos_button_identities[n]
@@ -107,13 +127,16 @@ def remove_tag(n):
 # ##### This needs some work with the new system ####
 # ###################################################
 def delete_tag(n):
-    global tags, image_tags
-    print("removed {}".format(tags[n]))
+    global tags, pic_info, temp
     tag = tags[n]
+    for e in pic_info:
+        index = e.count(tags[n])
+        if index > 0:
+            e.pop(index)
 
     tags.pop(tags.index(tag))
-    image_tags.pop(image_tags.index(tag))
-
+    print("removed {}".format(tags[n]))
+    apply_ntags(-1)
     list_tags()
 
 
@@ -270,8 +293,11 @@ def gen_name():
 # this may be the best option for saving the names of teh files with the preview removed
 # this is the broken thing, It goes into a infinite loop
 def apply_ntags(place):
-    global tags, temp, tagsext
-    temp.append(tags[place])
+    global tags, temp, tagsext, tagsext_s
+
+    if place > -1:
+        temp.append(tags[place])
+
     tagsext = []
 
     for index_temp in range(2, len(temp)):
@@ -291,23 +317,25 @@ def apply_ntags(place):
 
 
 # saves the name of the image to the image. Currently not working
-def save_name(name):
+def save_name():
+    global tagsext_s, name_s, pics
 
-    top = Toplevel()
-    topframe = Frame(top)
+    name = name_s + tagsext_s
+    print(name)
+    if len(name) < 5:
+        error_popup("Load an image!", "please load a image to save it's name!")
+    else:
+        extension = temp[0].split('.')
+        extension.remove(extension[0])
+        src = "pics_here/{}".format(temp[0])
+        dst = "pics_here/{}.{}".format(name, extension[0])
+        print("old name {}".format(dst))
+        print("new name {}".format(src))
+        os.rename(src, dst)
 
-    topframe.grid(row=0, column=0, sticky="NESW")
-    topframe.grid_rowconfigure(0, weight=1)
-    topframe.grid_columnconfigure(0, weight=1)
+        print("renamed {} to {}.{}".format(temp[0], name, extension[0]))
 
-    top.geometry("150x150")
-    top.title("Image saved!")
-
-    msg = Message(top, text="saved image as {} \n (this is temporary, i actually did nothing)".format(name))
-    msg.grid(column=3, columnspan=3)
-
-    button = Button(top, text="Dismiss", command=top.destroy)
-    button.grid(column=3, columnspan=3)
+        error_popup('image saved!', 'Saved the name {}! (didnt to anything atm)'.format(name))
 
 
 # load in all images, this function is loaded every fucking time the position is changed
@@ -329,7 +357,7 @@ def open_images():
         pic_info.append(temp)
 
     temp = pic_info[position]
-    master.geometry("%sx%s" % (1200, 900))
+
     change_image(0)
 
 
@@ -414,7 +442,7 @@ def change_pos(func):
 
 # This is supposed to save and fetch the new info for the next image
 def fetch_data(newpos):
-    global temp, pic_info, position
+    global temp, pic_info, position, name_s, tagsext_s, tagsext
     for e in pic_info:
         index = str(e).find(temp[1])
         if index > 0:
@@ -423,6 +451,8 @@ def fetch_data(newpos):
 
     pic_info[old_pos] = temp
     temp = pic_info[newpos]
+    name_s = temp[1]
+    apply_ntags(-1)
 
 
 # open image full size
@@ -460,21 +490,7 @@ def open_full():
         button.grid()
 
     else:
-        top = Toplevel()
-        topframe = Frame(top)
-
-        topframe.grid(row=0, column=0, sticky="NESW")
-        topframe.grid_rowconfigure(0, weight=1)
-        topframe.grid_columnconfigure(0, weight=1)
-
-        top.geometry("100x100")
-        top.title("Load images!")
-
-        msg = Message(top, text="Please choose File > Load images")
-        msg.grid(column=3, columnspan=3)
-
-        button = Button(top, text="Dismiss", command=top.destroy)
-        button.grid(column=3, columnspan=3)
+        error_popup('Load images!', "Please choose File > Load images")
 
 
 menubar = Menu(master)
@@ -518,7 +534,7 @@ button.grid(in_=toolsframe, sticky=EW, row=0, column=3)
 toolsframe.grid()
 
 button = Button(master, text='open full size', command=open_full)
-button.grid(in_=toolsframe, sticky=EW, row=0, column=3)
+button.grid(in_=toolsframe, sticky=EW, row=1, column=3)
 
 Label(master, text="Current name:").grid(in_=toolsframe, sticky=NSEW, row=2, column=3)
 
