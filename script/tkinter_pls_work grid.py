@@ -32,8 +32,9 @@ namenoises = ''
 pics = []
 pic_info = []
 
+tagsext = ''
+
 # this is part of the thing i just broke
-wantedt = []
 
 
 # This function updates teh label with a preview of the name
@@ -59,23 +60,21 @@ def add_tag():
     e1.delete(0, END)
 
 
-# commiting a tag to the image, this currently will puit all aplpied tags into one positing
-# in the array which makes it hard to use. This needs to be changed to the encoded letter for
-# each tag but im going to make lunch
-
+#############################################################################################
+# ////////////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ #
+#                        THIS FUNCTION IS NOW REDUNDANT DO NOT CALL IT                      #
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////////////// #
+#############################################################################################
 def apply_tag(n):
     global namenoises, pic_info, position, wantedt
     print(n)
-    temp = pic_info[position]
+    # temp = pic_info[position]
     if len(temp) < 3:
         temp.append(tags[n])
-        print(temp)
         print("no tags so i added some")
     else:
         print(temp)
-        itags = temp[2]
-        itags = itags + str(tags[n])
-        temp[2] = itags
+        temp.append(tags[n])
         print(temp)
     bname = (pos_button_identities[n])
     image_tags.append(tags[n])
@@ -90,19 +89,22 @@ def apply_tag(n):
 
 # removes tag from image
 def remove_tag(n):
-    global tags, image_tags
-    str = (tags[n])
-    if image_tags.index(str):
-        location = image_tags.index(str)
-        image_tags.pop(location)
+    global tags, image_tags, position, temp
+    temp = pic_info[position]
+    rem = tags[n]
+    print(temp)
+    temp.pop(temp.index(rem))
+    print(temp)
     bname = neg_button_identities[n]
     bname.configure(state=DISABLED)
     bname = pos_button_identities[n]
     bname.configure(state=ACTIVE)
-    print(button_identities)
 
 
 # remove tag from list
+# ###################################################
+# ##### This needs some work with the new system ####
+# ###################################################
 def delete_tag(n):
     global tags, image_tags
     print("removed {}".format(tags[n]))
@@ -141,8 +143,9 @@ def list_tags():
     rem_button_identities = []
     row = 0
     for i in range(0, len(tags)):
+        # attempting to integrate apply_ntags into program
         ico = PhotoImage(file='ico/tick.png')
-        button = Button(master, image=ico, command=partial(apply_tag, i))
+        button = Button(master, image=ico, command=partial(apply_ntags, i))
         pos_button_identities.append(button)
         button.grid(in_=tagsframe, row=row, column=0, sticky=NSEW)
         label = Label(image=ico)
@@ -245,9 +248,6 @@ def clear_data():
 
 # this function is pointless however i want to keep it because
 # i cant be bothered fixing what will break if i remove it
-def update_name():
-    global namenoises
-    name_update(namenoises)
 
 
 # generates a suffix for the image by creating a 5 digit random number
@@ -264,16 +264,25 @@ def gen_name():
 # this array expects a list to be given then iterates though it
 # this may be the best option for saving the names of teh files with the preview removed
 # this is the broken thing, It goes into a infinite loop
-def apply_ntags(desiredt):
-    tagsext = ''
-    applypos = desiredt
-    applypos.sort()
+def apply_ntags(place):
+    global tags, temp, tagsext
+    temp.append(tags[place])
+    tagsext = []
 
-    for i in applypos:
-        print(i)
-        tagsext = tagsext + alphabet[int(i)]
+    for index_temp in range(2, len(temp)):
+        index_tags = tags.index(temp[index_temp])
+        tagsext.append(alphabet[index_tags])
 
-    return tagsext
+    tagsext.sort()
+    tagsext_s = ''
+    for item in tagsext:
+        tagsext_s = tagsext_s + item
+
+    bname = (pos_button_identities[place])
+    image_tags.append(tags[place])
+    bname.configure(text="added", state=DISABLED)
+    bname = neg_button_identities[place]
+    bname.configure(state=ACTIVE)
 
 
 # saves the name of the image to the image. Currently not working
@@ -300,7 +309,7 @@ def save_name(name):
 # that is quite possibly the LEAST efficient way of doing this. what the fuck is wrong with you
 def open_images():
     list_tags()
-    global img_identity, arrow_identity, position, loaded, namenoises, pics, pic_info
+    global img_identity, arrow_identity, position, loaded, namenoises, pics, pic_info, temp
     name = ''
     namenoises = Label(master, text=name)
 
@@ -311,10 +320,10 @@ def open_images():
     pics = os.listdir(dir)
     pics.sort()
     for i in pics:
-        temp = []
-        temp.append(i)
-        temp.append(gen_name())
+        temp = [i, gen_name()]
         pic_info.append(temp)
+
+    temp = pic_info[position]
     master.geometry("%sx%s" % (1200, 900))
     change_image(0)
 
@@ -322,7 +331,9 @@ def open_images():
 # this function was made in the hopes that i could make the program slightly more efficient,
 # and it fucking does, suck my ass.
 def change_image(newpos):
-    global img_identity, arrow_identity, position, loaded, namenoises, pics
+    global img_identity, arrow_identity, loaded, namenoises, pics, position
+
+    fetch_data(newpos)
 
     if len(img_identity) > 0:
             bname = (img_identity[0])
@@ -334,7 +345,7 @@ def change_image(newpos):
                 arrow_identity = []
 
     image = Image.open("Pics_here/%s" % (pics[newpos]))
-    update_name()
+    name_update(namenoises)
 # resizing function starts
     w = image.width
     h = image.height
@@ -354,8 +365,6 @@ def change_image(newpos):
     new_w = int(multiplier * width_r)
     new_h = int(multiplier * height_r)
 
-# resizing function ends
-
     print("resizing: {}x{} to {}x{} scaled by {} ({})".format(w, h, new_w, new_h, int(multiplier), bigger))
     image = image.resize((new_w, new_h), Image.ANTIALIAS)
     photo = ImageTk.PhotoImage(image)
@@ -365,6 +374,9 @@ def change_image(newpos):
     img_identity.append(label)
     arrows = ['ico/lefta.png', 'ico/righta.png']
     image.close()
+
+    # resizing function ends
+
 
     for i in range(0, 2):
         ico = PhotoImage(file=arrows[i])
@@ -380,6 +392,7 @@ def change_image(newpos):
 def change_pos(func):
     global position, img_identity, arrow_identity
     dir = os.listdir("Pics_here")
+    print(func)
     if func == 0:
         position = position - 1
         if position < 0:
@@ -392,12 +405,18 @@ def change_pos(func):
     print("changed pos variable to {}".format(position))
     change_image(position)
 
-###############################
-# !!!! this is important !!!!!#
-###############################
-def fetch_data():
-    print("fuck")
 
+# This is supposed to save and fetch the new info for the next image
+def fetch_data(newpos):
+    global temp, pic_info, position
+    for e in pic_info:
+        index = str(e).find(temp[1])
+        if index > 0:
+            old_pos = pic_info.index(e)
+            print(old_pos)
+
+    pic_info[old_pos] = temp
+    temp = pic_info[newpos]
 
 # open image full size
 def open_full():
@@ -452,6 +471,7 @@ def open_full():
 
 
 menubar = Menu(master)
+
 
 for item in ascii_uppercase:
     alphabet.append(item)
