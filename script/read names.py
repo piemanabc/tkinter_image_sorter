@@ -11,14 +11,14 @@ alphabet = []
 config_index = ['tags', 'tagkeys']
 tags = []
 button_identities = []
+image_identities = []
 image_button_id = []
-img_identity = []
 label_identities = []
 tagkeys = []
 master = Tk()
 image_tags = []
-width = 1920
-height = 1080
+width = 1675
+height = 900
 position = 0
 del_count = 0
 loaded = FALSE
@@ -31,6 +31,8 @@ pic_info = []
 temp = []
 tagsext_s = ''
 tagsext = ''
+rows = 0
+img_dir = 'pics_here/'
 
 button_test = ''
 
@@ -154,84 +156,75 @@ def save_name():
 # that is quite possibly the LEAST efficient way of doing this. what the fuck is wrong with you
 def open_images():
     list_tags()
-    global img_identity, position, loaded, namenoises, pics, pic_info, temp
-    name = ''
+    global pics, pic_info, img_dir
     # Create a function to check if the name has been created for that photo yet
 
-    dir = "pics_here"
-    pics = os.listdir(dir)
+    pics = os.listdir(img_dir)
     pics.sort()
-    for i in pics:
-        temp = [i, gen_name()]
-        pic_info.append(temp)
-
-    temp = pic_info[position]
-    draw_images(0)
+    draw_images()
 
 
 # this function was made in the hopes that i could make the program slightly more efficient,
 # and it fucking does, suck my ass.
-def draw_images(newpos):
-    global img_identity, arrow_identity, pics, image_button_id
+def draw_images():
+    global image_identities, button_identities, pics, image_button_id, img_dir
 
-    image_canvas = Canvas(master, bd=0)
-    images_frame = Frame(image_canvas, width=1900, height=500)
-    yscrollbar = Scrollbar(master, orient=VERTICAL, command=image_canvas.yview())
-    image_canvas.configure(yscrollcommand=yscrollbar.set)
+    # attach scroll action to scrollbar
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
-    yscrollbar.grid(row=3, column=1, sticky=N + S)
+    if len(image_identities) > 0:
+        for item in range(0, len(image_identities)):
+            image = (image_identities[item])
+            image.destroy()
+        image_identities = []
+        for item in range(0, len(button_identities)):
+            btn = (button_identities[item])
+            btn.destroy()
+        button_identities = []
 
-    # images_frame.grid(row=3, column=0)
+    canvas = Canvas(master, borderwidth=0)
+    frame = Frame(canvas)
+    vsb = Scrollbar(master, orient="vertical", command=canvas.yview)
 
-    yscrollbar.config(command=image_canvas.yview)
+    canvas.configure(yscrollcommand=vsb.set)
 
-    image_canvas.config(width=1920, height=500, scrollregion=image_canvas.bbox("all"))
-    image_canvas.config(yscrollcommand=yscrollbar.set)
-    image_canvas.grid(row=3, column=0, sticky=N + S + E + W)
+    vsb.grid(in_=frame, row=0, column=9, sticky=N + S)
+    canvas.grid(column=0, row=5)
+    canvas.create_window((4, 4), window=frame, anchor=NW)
 
-    images_frame.bind("<Configure>", lambda event, canvas=image_canvas:canvas.configure(scrollregion=image_canvas.bbox("all")))
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
+    frame.bind("<Configure>", lambda event, canvas=canvas: canvas.configure(scrollregion=canvas.bbox("all")))
 
-    # scrollbar = Scrollbar(master)
-    # scrollbar.grid(sticky=NS)
-
-    fetch_data(newpos)
-    row = 4
+    row = 0
     col = 0
+    global rows
+    for item in range(0, len(pics)):
 
-    if len(img_identity) > 0:
-            bname = (img_identity[0])
-            bname.destroy()
-            img_identity = []
-            for i in range(1, len(arrow_identity)):
-                bname = arrow_identity[i]
-                bname.destroy()
-                arrow_identity = []
-    for i in range(0, len(pics)):
-        image = Image.open("Pics_here/%s" % (pics[i]))
+        image = Image.open("{}/{}".format(img_dir, pics[item]))
 
-        # resizing function starts
         w = image.width
         h = image.height
         multiplier = 0
         ratio = Fraction(w, h)
         e = str(ratio).split('/')
-        print('resizing {}, fractoin is {}'.format(pics[i], e))
+        print('resizing {}, fractoin is {}'.format(pics[item], e))
         if len(e) != 1:
             width_r = int(e[0])
             height_r = int(e[1])
             bigger = 'h' if h > w else 'w'
 
             if bigger == 'w':
-                multiplier = 100 / width_r
+                multiplier = 200 / width_r
 
             elif bigger == 'h':
-                multiplier = 100 / height_r
+                multiplier = 200 / height_r
 
             new_w = int(multiplier * width_r)
             new_h = int(multiplier * height_r)
         else:
-            new_w = 100
-            new_h = 100
+            new_w = 200
+            new_h = 200
             bigger = 'image was 1:1'
 
         print("resizing: {}x{} to {}x{} scaled by {} ({})".format(w, h, new_w, new_h, int(multiplier), bigger))
@@ -241,53 +234,24 @@ def draw_images(newpos):
         photo = ImageTk.PhotoImage(image)
         label = Label(image=photo)
         label.image = photo
-        label.grid(in_=image_canvas, row=row, column=col)
-        img_identity.append(label)
+        image_identities.append(label)
+        label.grid(in_=frame, column=col, row=row)
         image.close()
 
-        button = Button(master, text=pics[i], command=partial(open_full, i))
-        image_button_id.append(button)
-        button.grid(in_=image_canvas, column=col, row=row + 1, sticky=NSEW)
+        button = Button(master, text=pics[item], command=partial(open_full, item))
+        button.grid(in_=frame, column=col, row=row + 1)
 
-        col += 2
-        if col >= 6:
+        col += 1
+
+        if col >= 8:
+            rows += 4
             col = 0
-            row += 2
-    # resizing function ends
+            row += 3
+        if row >= 100:
+            print('done')
+            break
 
-
-# Generates the new position, This is done though making the list cyclic rather than linear
-def change_pos(func):
-    global position, img_identity, arrow_identity
-    dir = os.listdir("Pics_here")
-    print(func)
-    if func == 0:
-        position = position - 1
-        if position < 0:
-            position = len(dir) - 1
-    elif func == 1:
-        position = position + 1
-        if position > len(dir) - 1:
-            position = 0
-    print()
-    print("changed pos variable to {}".format(position))
-    #change_image(position)
-    list_tags()
-
-
-# This is supposed to save and fetch the new info for the next image
-def fetch_data(newpos):
-    global temp, pic_info, position, name_s, tagsext_s, tagsext
-    for e in pic_info:
-        index = str(e).find(temp[1])
-        if index > 0:
-            old_pos = pic_info.index(e)
-            print(old_pos)
-
-    pic_info[old_pos] = temp
-    temp = pic_info[newpos]
-    name_s = temp[1]
-    #apply_ntags(-1)
+    vsb.grid(rowspan=rows)
 
 
 # open image full size
@@ -298,7 +262,6 @@ def open_full(index):
         dir = "pics_here"
         pics = os.listdir(dir)
         pics.sort()
-        master.geometry("%sx%s" % (1200, 900))
         image = Image.open("Pics_here/%s" % (pics[index]))
         w = image.width
         h = image.height
@@ -338,7 +301,7 @@ read_config()
 
 filemenu = Menu(master, tearoff=0)
 filemenu.add_command(label="Load tags", command=partial(read_config))
-filemenu.add_command(label="Load images", command=open_images())
+filemenu.add_command(label="Load images", command=open_images)
 filemenu.add_separator()
 
 filemenu.add_command(label="Exit", command=master.quit)
@@ -346,6 +309,7 @@ menubar.add_cascade(label="File", menu=filemenu)
 
 debugmenu = Menu(master, tearoff=0)
 debugmenu.add_command(label="Print all possible", command=partial(print, tags))
+debugmenu.add_command(label="show me a error", command=partial(error_popup, 'title', 'this is a test \n Fuck me'))
 debugmenu.add_command(label="Delete data.txt", command=clear_data)
 menubar.add_cascade(label="debug", menu=debugmenu)
 

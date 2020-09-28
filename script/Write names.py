@@ -385,7 +385,7 @@ def change_image(newpos):
     ratio = Fraction(w, h)
     e = str(ratio).split('/')
     width_r = int(e[0])
-    height_r = int(e[1])
+    height_r = int(e[-1])
     bigger = 'h' if h > w else 'w'
 
     if bigger == 'w':
