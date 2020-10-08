@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 from string import ascii_uppercase
 from random import randint
 from fractions import Fraction
+from math import ceil
 
 
 alphabet = []
@@ -14,6 +15,7 @@ button_identities = []
 image_identities = []
 image_button_id = []
 label_identities = []
+arrow_identity = []
 tagkeys = []
 master = Tk()
 image_tags = []
@@ -32,7 +34,8 @@ temp = []
 tagsext_s = ''
 tagsext = ''
 rows = 0
-img_dir = 'pics_here/'
+arrows = ['ico/lefta.png', 'ico/righta.png']
+img_dir = 'D:/Python/tkinter_image_sorter/script/Pics_here'
 
 button_test = ''
 
@@ -69,8 +72,10 @@ def rem_filter(item, index):
 
 # list all tags for user to see, this may need to be reworked
 def list_tags():
-    global button_identities, image_tags, temp
+    global button_identities, arrow_identity, image_tags, temp, arrows, pics
     count = 0
+    num_pages = int(ceil(len(pics) / 10))
+    print(len(pics))
     button_identities = []
     col = 2
 
@@ -85,7 +90,22 @@ def list_tags():
         count += 1
         col += 1
 
-    tagsframe.grid(row=1, column=0, sticky=NSEW, columnspan=11)
+    tagsframe.grid(row=0, column=0, sticky=NSEW, columnspan=len(tags) + 2)
+
+    page_mover_frame = Frame(master=None)
+
+    button = Button(master, text='Back a page', command=partial(print, 'Back a page'))
+    button.grid(in_=page_mover_frame, row=0, column=0, sticky=NSEW)
+
+    for page in range(num_pages):
+        print('made a button')
+        button = Button(master, text=page + 1, command=partial(print, page + 1))
+        button.grid(in_=page_mover_frame, row=0, column=page + 1, sticky=NSEW)
+
+    button = Button(master, text='forward a page', command=partial(print, 'forward a page'))
+    button.grid(in_=page_mover_frame, row=0, column=num_pages + 2, sticky=NSEW)
+
+    page_mover_frame.grid(row=0, column=len(tags)+2, columnspan=num_pages+2,  sticky=NSEW)
 
 
 # Reads tags and settings from a file from a file
@@ -155,12 +175,11 @@ def save_name():
 # load in all images, this function is loaded every fucking time the position is changed
 # that is quite possibly the LEAST efficient way of doing this. what the fuck is wrong with you
 def open_images():
-    list_tags()
     global pics, pic_info, img_dir
     # Create a function to check if the name has been created for that photo yet
-
     pics = os.listdir(img_dir)
     pics.sort()
+    list_tags()
     draw_images()
 
 
@@ -199,7 +218,7 @@ def draw_images():
     row = 0
     col = 0
     global rows
-    for item in range(0, len(pics)):
+    for item in range(0, len(pics)+1):
 
         image = Image.open("{}/{}".format(img_dir, pics[item]))
 
@@ -246,8 +265,8 @@ def draw_images():
         if col >= 8:
             rows += 4
             col = 0
-            row += 3
-        if row >= 100:
+            row += 2
+        if row >= 10:
             print('done')
             break
 

@@ -36,6 +36,7 @@ tagsext_s = ''
 
 tagsext = ''
 
+
 def error_popup(title, errortxt):
     top = Toplevel()
     topframe = Frame(top)
@@ -87,7 +88,7 @@ def add_tag():
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\//////////////////////////////////////// #
 #############################################################################################
 def apply_tag(n):
-    global namenoises, pic_info, position, wantedt
+    global namenoises, pic_info, position
     print(n)
     # temp = pic_info[position]
     if len(temp) < 3:
@@ -105,7 +106,7 @@ def apply_tag(n):
     gen_name()
     name_update(namenoises)
     # also part of the broken thing
-    wantedt.append(n)
+
 
 
 # removes tag from image
