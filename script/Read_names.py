@@ -20,7 +20,7 @@ label_identities = []
 arrow_identity = []
 drawn_tags = []
 tagkeys = []
-master = Tk()
+
 image_tags = []
 width = 1675
 height = 900
@@ -64,7 +64,7 @@ def error_popup(title, errortxt):
     button.grid(column=3, columnspan=3)
 
 
-def add_filter(item, index, button):
+def add_filter(item, index, button, window):
     global temp, alphabet, drawn_tags
 
     letter = alphabet[index]
@@ -74,7 +74,7 @@ def add_filter(item, index, button):
     print()
     print("index is")
     print(temp.index(letter))
-    button.configure(command=partial(rem_filter, item, index, button), relief=SUNKEN)
+    button.configure(command=partial(rem_filter, item, index, button, window), relief=SUNKEN)
 
     print()
     print('adding filter {} from position {}'.format(item, index))
@@ -82,17 +82,17 @@ def add_filter(item, index, button):
     print("inserted tag {}(letter {}) at index {}, list is now {}".format(item, letter,  index, temp))
     print()
 
-    draw_images()
+    draw_images(window)
 
 
-def rem_filter(item, index, button):
+def rem_filter(item, index, button, window):
     global temp, alphabet, drawn_tags
 
     letter = alphabet[index]
     print("removing tag {}(letter {}) at index {}".format(item, letter, index))
     print(temp)
     print()
-    button.configure(command=partial(add_filter, item, index, button), relief=RAISED)
+    button.configure(command=partial(add_filter, item, index, button, window), relief=RAISED)
     temp.pop(temp.index(letter))
 
     print()
@@ -101,27 +101,12 @@ def rem_filter(item, index, button):
 
     print(" list is now {}".format(temp))
 
-    draw_images()
-
-
-def filter_check():
-    global button_identities, temp, tags
-
-    for index in range(len(tags)):
-        letter = alphabet[index]
-        for item in temp:
-            if letter == item:
-                index = alphabet.index(item)
-                button = button_identities[index]
-                button.configure(command=partial(rem_filter, item, index), relief=SUNKEN)
-            else:
-                button = button_identities[index]
-                button.configure(command=partial(add_filter, item, index), relief=RAISED)
+    draw_images(window)
 
 # list all tags for user to see, this may need to be reworked
 
 
-def list_tags():
+def list_tags(window):
     global button_identities, arrow_identity, image_tags, temp, arrows, pics, c_page, num_pages
     count = 0
 
@@ -137,11 +122,11 @@ def list_tags():
         tagsframe.destroy()
         tagsframe = Frame(master=None)
 
-    Label(master, text="Current tags:  ").grid(in_=tagsframe, sticky=NSEW, row=1, column=1)
+    Label(window, text="Current tags:  ").grid(in_=tagsframe, sticky=NSEW, row=1, column=1)
 
     for i in range(0, len(tags)):
-        button = Button(master, text=tags[i], command=partial(print, "something went wrong"))
-        button.configure(command=partial(add_filter, tags[i], i, button))
+        button = Button(window, text=tags[i], command=partial(print, "something went wrong"))
+        button.configure(command=partial(add_filter, tags[i], i, button, window))
         drawn_tags.insert(i, button)
         button.grid(in_=tagsframe, column=col+1, row=1, sticky=NSEW)
 
@@ -152,16 +137,16 @@ def list_tags():
 
     page_mover_frame = Frame(master=None)
 
-    button = Button(master, text='Back a page', command=partial(change_page, '-'))
+    button = Button(window, text='Back a page', command=partial(change_page, '-', window))
     button.grid(in_=page_mover_frame, row=0, column=0, sticky=NSEW)
 
     for page in range(num_pages):
-        button = Button(master, text=page + 1, command=partial(change_page, page))
+        button = Button(window, text=page + 1, command=partial(change_page, page, window))
         if page == c_page:
             button.configure(relief=SUNKEN)
         button.grid(in_=page_mover_frame, row=0, column=page + 1, sticky=NSEW)
 
-    button = Button(master, text='forward a page', command=partial(change_page, '+'))
+    button = Button(window, text='forward a page', command=partial(change_page, '+', window))
     button.grid(in_=page_mover_frame, row=0, column=num_pages + 2, sticky=NSEW)
 
     page_mover_frame.grid(row=0, column=len(tags)+2, columnspan=num_pages+2,  sticky=NSEW)
@@ -170,7 +155,7 @@ def list_tags():
 # this function needs to change pages, The idea is to make it more like a job queueing type function
 #  where it is handed the new data then redraws the page
 
-def change_page(new):
+def change_page(new, window):
     global c_page, num_pages
     print()
     print()
@@ -192,9 +177,9 @@ def change_page(new):
     elif c_page < 0:
         c_page = num_pages - 1
 
-    draw_images()
+    draw_images(window)
 
-    list_tags()
+    list_tags(window)
 
 
 # Reads tags and settings from a file from a file
@@ -263,18 +248,18 @@ def save_name():
 
 # load in all images, this function is loaded every fucking time the position is changed
 # that is quite possibly the LEAST efficient way of doing this. what the fuck is wrong with you
-def open_images():
+def open_images(window):
     global pics, pic_info, img_dir
     # Create a function to check if the name has been created for that photo yet
     pics = os.listdir(img_dir)
     pics.sort()
-    list_tags()
-    draw_images()
+    list_tags(window)
+    draw_images(window)
 
 
 # this function was made in the hopes that i could make the program slightly more efficient,
 # and it fucking does, suck my ass.
-def draw_images():
+def draw_images(window):
     global image_identities, button_identities, img_button_identities, pics, image_button_id, img_dir, c_page, rows,\
         temp, filtered
 
@@ -298,10 +283,10 @@ def draw_images():
         button_identities = []
         img_button_identities = []
 
-    canvas = Canvas(master, borderwidth=0)
+    canvas = Canvas(window, borderwidth=0)
     frame = Frame(canvas)
     image_identities.append(frame)
-    vsb = Scrollbar(master, orient="vertical", command=canvas.yview)
+    vsb = Scrollbar(window, orient="vertical", command=canvas.yview)
 
     canvas.configure(yscrollcommand=vsb.set)
 
@@ -384,7 +369,7 @@ def draw_images():
         image_identities.append(label)
         label.grid(in_=frame, column=col, row=row)
         image.close()
-        button = Button(master, text=filtered[item], command=partial(open_full, item))
+        button = Button(window, text=filtered[item], command=partial(open_full, item))
         img_button_identities.append(button)
         button.grid(in_=frame, column=col, row=row + 1)
 
@@ -438,37 +423,9 @@ def open_full(index):
         error_popup('Load images!', "Please choose File > Load images")
 
 
-menubar = Menu(master)
 
-
-for item in ascii_uppercase:
-    alphabet.append(item)
-
-read_config()
-
-filemenu = Menu(master, tearoff=0)
-filemenu.add_command(label="Load tags", command=partial(read_config))
-filemenu.add_command(label="Load images", command=open_images)
-filemenu.add_separator()
-
-filemenu.add_command(label="Exit", command=master.quit)
-menubar.add_cascade(label="File", menu=filemenu)
-
-debugmenu = Menu(master, tearoff=0)
-debugmenu.add_command(label="Print all possible", command=partial(print, tags))
-debugmenu.add_command(label="show me a error", command=partial(error_popup, 'title', 'this is a test \n Fuck me'))
-debugmenu.add_command(label="Delete data.txt", command=clear_data)
-menubar.add_cascade(label="debug", menu=debugmenu)
-
-master.config(menu=menubar)
-
-master.geometry("%sx%s" % (width, height))
-
-toolsframe = Frame(master=None)
-
-toolsframe.grid()
+#
 
 # button = Button(master, text='open full size', command=open_full)
 # button.grid(in_=toolsframe, sticky=EW, row=1, column=3)
 
-master.mainloop()
