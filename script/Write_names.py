@@ -335,7 +335,7 @@ def save_name():
 
         print("renamed {} to {}.{}".format(temp[0], name, extension[0]))
 
-        error_popup('image saved!', 'Saved the name {}! (didnt to anything atm)'.format(name))
+        error_popup('image saved!', 'Saved the name {}!'.format(name))
 
 
 # load in all images, this function is loaded every fucking time the position is changed
@@ -351,6 +351,14 @@ def open_images():
 
     dir = "pics_here"
     pics = os.listdir(dir)
+    print(pics)
+
+    for item in pics:
+        if os.path.isdir('{}/{}'.format(dir, item)):
+            pics.pop(pics.index(item))
+
+    print(pics)
+
     pics.sort()
     for i in pics:
         temp = [i, gen_name()]
@@ -453,6 +461,10 @@ def fetch_data(newpos):
     temp = pic_info[newpos]
     name_s = temp[1]
     apply_ntags(-1)
+
+
+def hello_world():
+    print("oi cunt")
 
 
 # open image full size

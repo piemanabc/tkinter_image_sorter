@@ -6,16 +6,19 @@ from string import ascii_uppercase
 from random import randint
 from fractions import Fraction
 from math import ceil
+import re
 
 
 alphabet = []
 config_index = ['tags', 'tagkeys']
 tags = []
 button_identities = []
+img_button_identities = []
 image_identities = []
 image_button_id = []
 label_identities = []
 arrow_identity = []
+drawn_tags = []
 tagkeys = []
 master = Tk()
 image_tags = []
@@ -34,9 +37,12 @@ temp = []
 tagsext_s = ''
 tagsext = ''
 rows = 0
+c_page = 0
 arrows = ['ico/lefta.png', 'ico/righta.png']
 img_dir = 'D:/Python/tkinter_image_sorter/script/Pics_here'
+# img_dir = 'D:/back ups/no/i would reccomend staying out of here/lewd'
 
+filtered = []
 button_test = ''
 
 
@@ -58,33 +64,85 @@ def error_popup(title, errortxt):
     button.grid(column=3, columnspan=3)
 
 
-def add_filter(item, index):
+def add_filter(item, index, button):
+    global temp, alphabet, drawn_tags
+
+    letter = alphabet[index]
+
+    temp.append(letter)
+    print(index)
+    print()
+    print("index is")
+    print(temp.index(letter))
+    button.configure(command=partial(rem_filter, item, index, button), relief=SUNKEN)
+
+    print()
     print('adding filter {} from position {}'.format(item, index))
-    button = button_identities[index]
-    button.configure(command=partial(rem_filter, item, index), relief=SUNKEN)
+    print("Setting button {} to SUNKEN".format(button))
+    print("inserted tag {}(letter {}) at index {}, list is now {}".format(item, letter,  index, temp))
+    print()
+
+    draw_images()
 
 
-def rem_filter(item, index):
-    print('Removing filter {} from position {}'.format(item, index))
-    button = button_identities[index]
-    button.configure(command=partial(add_filter, item, index), relief=RAISED)
+def rem_filter(item, index, button):
+    global temp, alphabet, drawn_tags
 
+    letter = alphabet[index]
+    print("removing tag {}(letter {}) at index {}".format(item, letter, index))
+    print(temp)
+    print()
+    button.configure(command=partial(add_filter, item, index, button), relief=RAISED)
+    temp.pop(temp.index(letter))
+
+    print()
+    print('removing filter {} from position {}'.format(item, index))
+    print("Setting button {} to RAISED".format(button))
+
+    print(" list is now {}".format(temp))
+
+    draw_images()
+
+
+def filter_check():
+    global button_identities, temp, tags
+
+    for index in range(len(tags)):
+        letter = alphabet[index]
+        for item in temp:
+            if letter == item:
+                index = alphabet.index(item)
+                button = button_identities[index]
+                button.configure(command=partial(rem_filter, item, index), relief=SUNKEN)
+            else:
+                button = button_identities[index]
+                button.configure(command=partial(add_filter, item, index), relief=RAISED)
 
 # list all tags for user to see, this may need to be reworked
+
+
 def list_tags():
-    global button_identities, arrow_identity, image_tags, temp, arrows, pics
+    global button_identities, arrow_identity, image_tags, temp, arrows, pics, c_page, num_pages
     count = 0
-    num_pages = int(ceil(len(pics) / 10))
-    print(len(pics))
+
+    # Divide by the number of items per page
+
+    num_pages = int(ceil(len(pics) / 40))
     button_identities = []
     col = 2
 
     tagsframe = Frame(master=None)
+
+    if num_pages > 0:
+        tagsframe.destroy()
+        tagsframe = Frame(master=None)
+
     Label(master, text="Current tags:  ").grid(in_=tagsframe, sticky=NSEW, row=1, column=1)
 
     for i in range(0, len(tags)):
-        button = Button(master, text=tags[i], command=partial(add_filter, tags[i], i))
-        button_identities.append(button)
+        button = Button(master, text=tags[i], command=partial(print, "something went wrong"))
+        button.configure(command=partial(add_filter, tags[i], i, button))
+        drawn_tags.insert(i, button)
         button.grid(in_=tagsframe, column=col+1, row=1, sticky=NSEW)
 
         count += 1
@@ -94,18 +152,49 @@ def list_tags():
 
     page_mover_frame = Frame(master=None)
 
-    button = Button(master, text='Back a page', command=partial(print, 'Back a page'))
+    button = Button(master, text='Back a page', command=partial(change_page, '-'))
     button.grid(in_=page_mover_frame, row=0, column=0, sticky=NSEW)
 
     for page in range(num_pages):
-        print('made a button')
-        button = Button(master, text=page + 1, command=partial(print, page + 1))
+        button = Button(master, text=page + 1, command=partial(change_page, page))
+        if page == c_page:
+            button.configure(relief=SUNKEN)
         button.grid(in_=page_mover_frame, row=0, column=page + 1, sticky=NSEW)
 
-    button = Button(master, text='forward a page', command=partial(print, 'forward a page'))
+    button = Button(master, text='forward a page', command=partial(change_page, '+'))
     button.grid(in_=page_mover_frame, row=0, column=num_pages + 2, sticky=NSEW)
 
     page_mover_frame.grid(row=0, column=len(tags)+2, columnspan=num_pages+2,  sticky=NSEW)
+
+
+# this function needs to change pages, The idea is to make it more like a job queueing type function
+#  where it is handed the new data then redraws the page
+
+def change_page(new):
+    global c_page, num_pages
+    print()
+    print()
+    if new == '-':
+        c_page -= 1
+        print()
+        print("down a page")
+    elif new == '+':
+        c_page +=1
+        print()
+        print("up a page")
+    else:
+        c_page = new
+        print()
+        print("direct page")
+
+    if c_page > num_pages - 1:
+        c_page = 0
+    elif c_page < 0:
+        c_page = num_pages - 1
+
+    draw_images()
+
+    list_tags()
 
 
 # Reads tags and settings from a file from a file
@@ -186,7 +275,8 @@ def open_images():
 # this function was made in the hopes that i could make the program slightly more efficient,
 # and it fucking does, suck my ass.
 def draw_images():
-    global image_identities, button_identities, pics, image_button_id, img_dir
+    global image_identities, button_identities, img_button_identities, pics, image_button_id, img_dir, c_page, rows,\
+        temp, filtered
 
     # attach scroll action to scrollbar
     def _on_mousewheel(event):
@@ -200,10 +290,17 @@ def draw_images():
         for item in range(0, len(button_identities)):
             btn = (button_identities[item])
             btn.destroy()
+        for item in range(0, len(img_button_identities)):
+            btn = (img_button_identities[item])
+            btn.destroy()
+
+        image_identities = []
         button_identities = []
+        img_button_identities = []
 
     canvas = Canvas(master, borderwidth=0)
     frame = Frame(canvas)
+    image_identities.append(frame)
     vsb = Scrollbar(master, orient="vertical", command=canvas.yview)
 
     canvas.configure(yscrollcommand=vsb.set)
@@ -217,17 +314,48 @@ def draw_images():
 
     row = 0
     col = 0
-    global rows
-    for item in range(0, len(pics)+1):
 
-        image = Image.open("{}/{}".format(img_dir, pics[item]))
+    print()
+    print()
+    print("-- Image processing beginning ---")
+    print()
+    filtered = []
+    result = -1
+    if len(temp) > 0:
+        for tag in temp:
+            for pic in pics:
+                result = pic.find(tag)
+                if result > -1 and not pic in filtered:
+                    filtered.append(pic)
+    else:
+        filtered = pics
+
+    print()
+    print("filtered tags")
+    print(filtered)
+    print()
+    print("filtered letters")
+    print(temp)
+    print()
+
+    if (c_page * 40) + 40 > len(filtered):
+        max = len(filtered)
+    else:
+        max = (c_page * 40) + 40
+
+    for item in range(c_page * 40, max):
+
+        print("{}/{}".format(img_dir, filtered[item]))
+        print("This is item {} in the array".format(item))
+        image = Image.open("{}/{}".format(img_dir, filtered[item]))
 
         w = image.width
         h = image.height
         multiplier = 0
         ratio = Fraction(w, h)
         e = str(ratio).split('/')
-        print('resizing {}, fractoin is {}'.format(pics[item], e))
+        print('resizing {}, fraction is {}'.format(filtered[item], e))
+
         if len(e) != 1:
             width_r = int(e[0])
             height_r = int(e[1])
@@ -256,32 +384,32 @@ def draw_images():
         image_identities.append(label)
         label.grid(in_=frame, column=col, row=row)
         image.close()
-
-        button = Button(master, text=pics[item], command=partial(open_full, item))
+        button = Button(master, text=filtered[item], command=partial(open_full, item))
+        img_button_identities.append(button)
         button.grid(in_=frame, column=col, row=row + 1)
 
         col += 1
 
+        # 40 items per page
         if col >= 8:
             rows += 4
             col = 0
             row += 2
         if row >= 10:
-            print('done')
+            print('--- End of image processing ---')
             break
-
-    vsb.grid(rowspan=rows)
+    if rows > 0 :
+        vsb.grid(rowspan=rows)
 
 
 # open image full size
 def open_full(index):
-    global position, loaded, pics
-    pos = position
+    global position, loaded, pics, img_dir, filtered
+
     if len(pics) > 0:
-        dir = "pics_here"
-        pics = os.listdir(dir)
+        pics = os.listdir(img_dir)
         pics.sort()
-        image = Image.open("Pics_here/%s" % (pics[index]))
+        image = Image.open("{}/{}".format(img_dir, filtered[index]))
         w = image.width
         h = image.height
 
