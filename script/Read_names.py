@@ -2,11 +2,10 @@ from tkinter import *
 from functools import partial
 import os
 from PIL import Image, ImageTk
-from string import ascii_uppercase
 from random import randint
 from fractions import Fraction
 from math import ceil
-import re
+from string import ascii_uppercase
 
 
 alphabet = []
@@ -39,7 +38,7 @@ tagsext = ''
 rows = 0
 c_page = 0
 arrows = ['ico/lefta.png', 'ico/righta.png']
-img_dir = 'D:/Python/tkinter_image_sorter/script/Pics_here'
+img_dir = 'D:/Python/tkinter_image_sorter/Pics_here'
 # img_dir = 'D:/back ups/no/i would reccomend staying out of here/lewd'
 
 filtered = []

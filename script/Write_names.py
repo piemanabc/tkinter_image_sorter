@@ -18,7 +18,7 @@ neg_button_identities = []
 img_identity = []
 label_identities = []
 tagkeys = []
-master = Tk()
+
 image_tags = []
 width = 1200
 height = 900
@@ -71,15 +71,15 @@ def print_all(array):
 
 
 # adding a tag to a the list of tags
-def add_tag():
-    tag = e1.get().lower()
+def add_tag(window, entry):
+    tag = entry.get().lower()
     if tags.count(tag) > 0:
         error_popup("Tag conflict!", "Already added tag!")
     else:
         tags.append(tag)
-        print("added tag: %s" % (e1.get()))
-        list_tags()
-    e1.delete(0, END)
+        print("added tag: %s" % (entry.get()))
+        list_tags(window)
+    entry.delete(0, END)
 
 
 #############################################################################################
@@ -126,7 +126,8 @@ def remove_tag(n):
 # ###################################################
 # ##### This needs some work with the new system ####
 # ###################################################
-def delete_tag(n):
+
+def delete_tag(n, window):
     global tags, pic_info, temp
     tag = tags[n]
     for e in pic_info:
@@ -137,11 +138,12 @@ def delete_tag(n):
     tags.pop(tags.index(tag))
     print("removed {}".format(tags[n]))
     apply_ntags(-1)
-    list_tags()
+    list_tags(window)
+
 
 
 # list all tags for user to see, this may need to be reworked
-def list_tags():
+def list_tags(window):
     global button_identities, pos_button_identities, neg_button_identities, rem_button_identities, image_tags, temp
     count = 0
     tagsframe = Frame(master=None)
@@ -170,18 +172,18 @@ def list_tags():
     for i in range(0, len(tags)):
         # attempting to integrate apply_ntags into program
         ico = PhotoImage(file='ico/tick.png')
-        button = Button(master, image=ico, command=partial(apply_ntags, i))
+        button = Button(window, image=ico, command=partial(apply_ntags, i))
         pos_button_identities.append(button)
         button.grid(in_=tagsframe, row=row, column=0, sticky=NSEW)
         label = Label(image=ico)
         label.image = ico
 
-        label = Label(master, text=tags[i])
+        label = Label(window, text=tags[i])
         label_identities.append(label)
         label.grid(in_=tagsframe, row=row, column=1, sticky=NSEW)
 
         ico = PhotoImage(file='ico/-.png')
-        button = Button(master, text=tags[i], image=ico, command=partial(remove_tag, i))
+        button = Button(window, text=tags[i], image=ico, command=partial(remove_tag, i))
         neg_button_identities.append(button)
         button.grid(in_=tagsframe, row=row, column=2, sticky=NSEW)
         n = len(neg_button_identities) - 1
@@ -191,7 +193,7 @@ def list_tags():
         bname.configure(state=DISABLED)
 
         ico = PhotoImage(file='ico/X.png')
-        button = Button(master, text=tags[i], image=ico, command=partial(delete_tag, i))
+        button = Button(window, text=tags[i], image=ico, command=partial(delete_tag, i, window))
         rem_button_identities.append(button)
         button.grid(in_=tagsframe, row=row, column=3, sticky=NSEW)
         label = Label(image=ico)
@@ -340,13 +342,13 @@ def save_name():
 
 # load in all images, this function is loaded every fucking time the position is changed
 # that is quite possibly the LEAST efficient way of doing this. what the fuck is wrong with you
-def open_images():
-    list_tags()
+def open_images(window,frame):
+    list_tags(window)
     global img_identity, arrow_identity, position, loaded, namenoises, pics, pic_info, temp
     name = ''
-    namenoises = Label(master, text=name)
+    namenoises = Label(window, text=name)
 
-    namenoises.grid(in_=toolsframe, sticky=NSEW, row=3, column=3)
+    namenoises.grid(in_=frame, sticky=NSEW, row=3, column=3)
     # Create a function to check if the name has been created for that photo yet
 
     dir = "pics_here"
@@ -366,12 +368,12 @@ def open_images():
 
     temp = pic_info[position]
 
-    change_image(0)
+    change_image(0, window)
 
 
 # this function was made in the hopes that i could make the program slightly more efficient,
 # and it fucking does, suck my ass.
-def change_image(newpos):
+def change_image(newpos, window):
     global img_identity, arrow_identity, loaded, namenoises, pics, position
 
     fetch_data(newpos)
@@ -421,7 +423,7 @@ def change_image(newpos):
 
     for i in range(0, 2):
         ico = PhotoImage(file=arrows[i])
-        button = Button(master, text=tags[i], image=ico, command=partial(change_pos, i))
+        button = Button(window, text=tags[i], image=ico, command=partial(change_pos, i, window))
         arrow_identity.append(button)
         neg_button_identities.append(button)
         button.grid(row=1, column=5 + (i * 2), sticky=NSEW)
@@ -430,7 +432,7 @@ def change_image(newpos):
 
 
 # Generates the new position, This is done though making the list cyclic rather than linear
-def change_pos(func):
+def change_pos(func, window):
     global position, img_identity, arrow_identity
     dir = os.listdir("Pics_here")
     print(func)
@@ -444,8 +446,8 @@ def change_pos(func):
             position = 0
     print()
     print("changed pos variable to {}".format(position))
-    change_image(position)
-    list_tags()
+    change_image(position, window)
+    list_tags(window)
 
 
 # This is supposed to save and fetch the new info for the next image
@@ -468,14 +470,14 @@ def hello_world():
 
 
 # open image full size
-def open_full():
+def open_full(window):
     global position, loaded
     pos = position
     if len(arrow_identity) > 0:
         dir = "pics_here"
         pics = os.listdir(dir)
         pics.sort()
-        master.geometry("%sx%s" % (1200, 900))
+        window.geometry("%sx%s" % (1200, 900))
         image = Image.open("Pics_here/%s" % (pics[pos]))
         w = image.width
         h = image.height
@@ -504,53 +506,8 @@ def open_full():
     else:
         error_popup('Load images!', "Please choose File > Load images")
 
-
-menubar = Menu(master)
-
-
 for item in ascii_uppercase:
     alphabet.append(item)
 
 read_config()
 
-filemenu = Menu(master, tearoff=0)
-filemenu.add_command(label="Refresh tags", command=partial(read_config))
-filemenu.add_separator()
-filemenu.add_command(label="Save tags", command=save_config)
-filemenu.add_command(label="Save tags to image", command=save_name)
-filemenu.add_command(label="Load images", command=open_images)
-filemenu.add_separator()
-filemenu.add_command(label="List all tags", command=list_tags)
-filemenu.add_command(label="Exit", command=master.quit)
-menubar.add_cascade(label="File", menu=filemenu)
-
-debugmenu = Menu(master, tearoff=0)
-debugmenu.add_command(label="Print all possible", command=partial(print, tags))
-debugmenu.add_command(label="Print all applied", command=partial(print_all, image_tags))
-debugmenu.add_command(label="Delete data.txt", command=clear_data)
-menubar.add_cascade(label="debug", menu=debugmenu)
-
-master.config(menu=menubar)
-
-master.geometry("%sx%s" % (width, height))
-
-toolsframe = Frame(master=None)
-Label(master, text="enter tags").grid(in_=toolsframe, sticky=NSEW, row=0, column=0)
-
-e1 = Entry(master)
-e1.grid(in_=toolsframe, row=0, sticky=NSEW, columnspan=1, column=1)
-
-button = Button(master, text='add', command=add_tag)
-button.grid(in_=toolsframe, sticky=EW, row=0, column=3)
-
-toolsframe.grid()
-
-button = Button(master, text='open full size', command=open_full)
-button.grid(in_=toolsframe, sticky=EW, row=1, column=3)
-
-Label(master, text="Current name:").grid(in_=toolsframe, sticky=NSEW, row=2, column=3)
-
-button = Button(master, text='Apply!', command=save_name)
-button.grid(in_=toolsframe, sticky=EW, row=6, column=3)
-
-master.mainloop()
